@@ -68,6 +68,7 @@
         <div class="spinner-border" role="status">
           <span class="visually-hidden">Loading...</span>
         </div>
+        <p class="mt-2">Connecting to database...</p>
       </div>
     </div>
   </div>
@@ -141,11 +142,7 @@
       projectId: firebaseConfig.projectId
     });
     
-    // Test database connection
     console.log("Database reference created:", database ? "yes" : "no");
-    database.ref('.info/connected').on('value', (snapshot) => {
-      console.log("Firebase connection status changed:", snapshot.val());
-    });
 
     // Player info
     let currentPlayer = {
@@ -176,6 +173,10 @@
 
     let selectedMonth = '';
     let selectedSlot = '';
+    
+    // Connection state
+    let isConnected = false;
+    let connectionChecked = false;
 
     // Check if user is logged in
     function checkLoginStatus() {
@@ -214,7 +215,10 @@
       
       loginErrorP.style.display = 'none';
       checkLoginStatus();
-      loadMonths();
+      
+      if (isConnected) {
+        loadMonths();
+      }
     });
 
     // Logout
@@ -224,7 +228,10 @@
       localStorage.removeItem('playerName');
       localStorage.removeItem('playerEmail');
       checkLoginStatus();
-      loadMonths();
+      
+      if (isConnected) {
+        loadMonths();
+      }
     });
 
     // Validate email format
@@ -233,7 +240,7 @@
       return re.test(email);
     }
 
-    // Generate the next 12 months of first Fridays - FIXED VERSION
+    // Generate the next 12 months of first Fridays
     function generateMonths() {
       console.log("Generating months data...");
       const months = {};
@@ -277,35 +284,46 @@
       return months;
     }
 
-    // Initialize the database with empty months if they don't exist - FIXED VERSION
+    // Check and initialize the database
+    function setupDatabase() {
+      console.log("Setting up database...");
+      
+      // Monitor connection state
+      database.ref('.info/connected').on('value', (snapshot) => {
+        isConnected = snapshot.val();
+        connectionChecked = true;
+        console.log("Firebase connection status changed:", isConnected);
+        
+        if (isConnected) {
+          initializeDatabase();
+        } else if (connectionChecked) {
+          monthsContainer.innerHTML = `
+            <div class="alert alert-danger">
+              Unable to connect to the database. Please check your internet connection and try again.
+            </div>`;
+        }
+      });
+      
+      // Set a timeout in case Firebase doesn't respond
+      setTimeout(() => {
+        if (!connectionChecked) {
+          console.log("Firebase connection timeout - no response");
+          monthsContainer.innerHTML = `
+            <div class="alert alert-warning">
+              Connecting to the database is taking longer than expected. Please refresh the page or try again later.
+            </div>`;
+        }
+      }, 10000); // 10 second timeout
+    }
+
+    // Initialize the database with empty months if they don't exist
     function initializeDatabase() {
       console.log("Initializing database...");
       const monthsRef = database.ref('months');
       
-      // First check if we can connect to Firebase at all
-      database.ref('.info/connected').once('value')
+      // Check if months data exists
+      monthsRef.once('value')
         .then((snapshot) => {
-          const connected = snapshot.val();
-          console.log("Firebase connection status:", connected);
-          
-          if (!connected) {
-            console.error("Not connected to Firebase. Check your configuration.");
-            monthsContainer.innerHTML = `
-              <div class="alert alert-danger">
-                Unable to connect to the database. Please check your internet connection and Firebase configuration.
-              </div>`;
-            return;
-          }
-          
-          // Now check if the months data exists
-          return monthsRef.once('value');
-        })
-        .then((snapshot) => {
-          if (!snapshot) {
-            console.error("Failed to retrieve months data");
-            return;
-          }
-          
           console.log("Database connection successful!");
           console.log("Months data exists:", snapshot.exists());
           
@@ -410,7 +428,7 @@
       return false;
     }
 
-    // Render months and slots - FIXED VERSION
+    // Render months and slots
     function renderMonths(monthsData) {
       monthsContainer.innerHTML = '';
       
@@ -584,7 +602,7 @@
     // Initialize the application
     window.addEventListener('DOMContentLoaded', () => {
       checkLoginStatus();
-      initializeDatabase();
+      setupDatabase(); // This will wait for connection before initializing
     });
   </script>
 </body>
