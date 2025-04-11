@@ -132,7 +132,20 @@
     // Initialize Firebase
     firebase.initializeApp(firebaseConfig);
     const database = firebase.database();
-
+    // Add debugging
+    console.log("Script started");
+    console.log("Firebase config:", {
+      apiKey: firebaseConfig.apiKey.substring(0, 5) + "...", // Hide full key for security
+      databaseURL: firebaseConfig.databaseURL,
+      projectId: firebaseConfig.projectId
+    });
+    
+    // Test database connection
+    database.ref('.info/connected').on('value', (snapshot) => {
+      const connected = snapshot.val();
+      console.log("Firebase connected:", connected);
+    });
+    
     // Player info
     let currentPlayer = {
       name: localStorage.getItem('playerName') || '',
@@ -261,14 +274,31 @@
 
     // Initialize the database with empty months if they don't exist
     function initializeDatabase() {
+      console.log("Initializing database...");
       const monthsRef = database.ref('months');
       
-      monthsRef.once('value').then((snapshot) => {
-        if (!snapshot.exists()) {
-          const months = generateMonths();
-          monthsRef.set(months);
-        }
-      });
+      monthsRef.once('value')
+        .then((snapshot) => {
+          console.log("Database connection successful!");
+          if (!snapshot.exists()) {
+            console.log("Creating months data...");
+            const months = generateMonths();
+            monthsRef.set(months)
+              .then(() => {
+                console.log("Months data created successfully!");
+                loadMonths();
+              })
+              .catch(error => {
+                console.error("Error creating months data:", error);
+              });
+          } else {
+            console.log("Months data already exists.");
+            loadMonths();
+          }
+        })
+        .catch(error => {
+          console.error("Database connection error:", error);
+        });
     }
 
     // Format date for display
@@ -384,12 +414,24 @@
       });
     }
 
-    // Load months from database
+    // Update the loadMonths function to handle errors better
     function loadMonths() {
-      database.ref('months').on('value', (snapshot) => {
-        const monthsData = snapshot.val() || {};
-        renderMonths(monthsData);
-      });
+      console.log("Loading months data...");
+      database.ref('months').on('value', 
+        (snapshot) => {
+          console.log("Months data loaded successfully!");
+          const monthsData = snapshot.val() || {};
+          console.log("Number of months found:", Object.keys(monthsData).length);
+          renderMonths(monthsData);
+        }, 
+        (error) => {
+          console.error("Error loading months:", error);
+          monthsContainer.innerHTML = `
+            <div class="alert alert-danger">
+              Error loading data: ${error.message}. Please check your Firebase configuration.
+            </div>`;
+        }
+      );
     }
 
     // Sign up for a slot
