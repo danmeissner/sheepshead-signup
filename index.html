@@ -405,13 +405,24 @@
 
     // Format date for display
     function formatDate(dateStr) {
-      const date = new Date(dateStr);
-      return date.toLocaleDateString('en-US', {
+      // Parse the date string manually
+      const [year, month, day] = dateStr.split('-').map(num => parseInt(num, 10));
+      
+      // Create a date object using UTC to avoid timezone shifts
+      // (months are 0-indexed in JavaScript)
+      const date = new Date(Date.UTC(year, month - 1, day));
+      
+      // Format the date
+      const formattedDate = date.toLocaleDateString('en-US', {
         weekday: 'long',
         year: 'numeric',
         month: 'long',
-        day: 'numeric'
+        day: 'numeric',
+        timeZone: 'UTC' // Force UTC interpretation of the date
       });
+      
+      // Add the time
+      return formattedDate + ' at 7:30 PM';
     }
 
     // Check if a player is already signed up for a specific month
