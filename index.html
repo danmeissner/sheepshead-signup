@@ -250,11 +250,11 @@
       let currentDate = new Date(today.getFullYear(), today.getMonth(), 1);
       
       // Generate the next 12 months
-      for (let i = 0; i < 12; i++) {
+      for (let i = 1; i < 13; i++) {
         // Find the first Friday of the month
         const firstFriday = new Date(currentDate);
         const dayOfWeek = firstFriday.getDay();
-        const daysUntilFriday = (dayOfWeek <= 5) ? (5 - dayOfWeek) : (12 - dayOfWeek);
+        const daysUntilFriday = (5 - dayOfWeek + 7) % 7;
         firstFriday.setDate(firstFriday.getDate() + daysUntilFriday);
         
         // Format as YYYY-MM for the key
