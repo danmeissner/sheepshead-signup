@@ -36,13 +36,16 @@
 </head>
 <body>
   <div class="container mt-4 mb-5">
-    <h1>Sheepshead Game Sign-up</h1>
-    <p>Sign up for our monthly Sheepshead card game, hosted on the first Friday of each month at 7:30 PM.</p>
-    <p>Rules: Each person can sign up for only one seat per night, but can join as many different nights as they wish.</p>
+    <h1>I Miss Sheepshead. Let's play at Meissner's house...</h1>
+    <p>I'm just going to host monthly Sheepshead card game at my house. Last Friday of each month at 7:30 PM at my house -- 3810 N 169th St in Brookfield.</p>
+    <p>Since I'm hosting and to make sure Stacey doesn't stress out every month, please bring your favorite snack to share and bring whatever drinks you'll want to consume. I will likely have both (food and drinks) but I'm not always planning ahead and may forget :)</p>
+    <p></p>
+    <p>Rules: Each person can sign up for only one seat per night. We'll play any month we have at least 5 people signed up. Delete yourself if you can't make it and check back here before you head over (keep this website bookmarked!). Sign up for as many nights as you'd like and as early as you want to save a seat. But we're relying on this database to ensure we have enough to play, so please come back and delete if you can't make it or change your mind.</p>
     
     <div id="auth-container" class="mb-4">
       <div id="not-logged-in">
         <p>Please enter your name and email to view and sign up for games:</p>
+        <p>Yep, I'm selling your personal data to a broker to pay for my Sheepshead habit, hehe.</p>
         <div class="row g-3">
           <div class="col-md-4">
             <input type="text" id="player-name" class="form-control" placeholder="Your Name">
@@ -240,9 +243,9 @@
       return re.test(email);
     }
 
-    // Generate the next 12 months of first Fridays
+    // Function to generate the last Friday of each month for the next 12 months
     function generateMonths() {
-      console.log("Generating months data...");
+      console.log("Generating months data for last Fridays...");
       const months = {};
       const today = new Date();
       
@@ -250,20 +253,29 @@
       let currentDate = new Date(today.getFullYear(), today.getMonth(), 1);
       
       // Generate the next 12 months
-      for (let i = 1; i < 13; i++) {
-        // Find the first Friday of the month
-        const firstFriday = new Date(currentDate);
-        const dayOfWeek = firstFriday.getDay();
-        const daysUntilFriday = (5 - dayOfWeek + 7) % 7;
-        firstFriday.setDate(firstFriday.getDate() + daysUntilFriday);
+      for (let i = 0; i < 12; i++) {
+        // First, find the first day of the next month
+        const nextMonth = new Date(currentDate);
+        nextMonth.setMonth(nextMonth.getMonth() + 1);
+        
+        // Then, go back one day to get the last day of the current month
+        const lastDay = new Date(nextMonth);
+        lastDay.setDate(0);
+        
+        // Now find the last Friday of the month by starting from the last day
+        // and going backwards until we hit a Friday (day 5)
+        const lastFriday = new Date(lastDay);
+        while (lastFriday.getDay() !== 5) {
+          lastFriday.setDate(lastFriday.getDate() - 1);
+        }
         
         // Format as YYYY-MM for the key
-        const monthKey = `${firstFriday.getFullYear()}-${String(firstFriday.getMonth() + 1).padStart(2, '0')}`;
+        const monthKey = `${currentDate.getFullYear()}-${String(currentDate.getMonth() + 1).padStart(2, '0')}`;
         
         // Format the date as YYYY-MM-DD
-        const dateStr = `${firstFriday.getFullYear()}-${String(firstFriday.getMonth() + 1).padStart(2, '0')}-${String(firstFriday.getDate()).padStart(2, '0')}`;
+        const dateStr = `${lastFriday.getFullYear()}-${String(lastFriday.getMonth() + 1).padStart(2, '0')}-${String(lastFriday.getDate()).padStart(2, '0')}`;
         
-        // Create empty slots - using STRING keys (this was the issue)
+        // Create empty slots - using STRING keys
         const slots = {};
         for (let j = 1; j <= 6; j++) {
           slots[j.toString()] = null; // Use string keys like "1", "2", etc.
@@ -274,7 +286,7 @@
           slots: slots
         };
         
-        console.log(`Generated month ${monthKey} with date ${dateStr}`);
+        console.log(`Generated month ${monthKey} with last Friday date ${dateStr}`);
         
         // Move to the next month
         currentDate.setMonth(currentDate.getMonth() + 1);
