@@ -34,6 +34,7 @@
       cursor: not-allowed !important;
     }
   </style>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.8.1/font/bootstrap-icons.css">
 </head>
 <body>
   <div class="container mt-4 mb-5">
@@ -104,6 +105,10 @@
         </div>
         <div class="modal-body">
           <p>Are you sure you want to sign up for the game on <span id="signup-date"></span>?</p>
+          <div class="form-group mt-3">
+            <label for="signup-comment">Comment (optional):</label>
+            <textarea id="signup-comment" class="form-control" rows="2" placeholder="Any notes about your sign-up? (e.g., 'I might be 10 minutes late')"></textarea>
+          </div>
           <p class="error" id="already-signed-error">You are already signed up for this date.</p>
         </div>
         <div class="modal-footer">
@@ -559,6 +564,14 @@
               slotCard.className = 'slot slot-mine';
               slotCard.innerHTML = `<div><strong>${slot.name}</strong> (You)</div>`;
               
+              // Add comment as tooltip if it exists
+              if (slot.comment) {
+                slotCard.setAttribute('data-bs-toggle', 'tooltip');
+                slotCard.setAttribute('data-bs-placement', 'top');
+                slotCard.setAttribute('title', slot.comment);
+                slotCard.innerHTML += `<div class="mt-1"><small><i class="bi bi-chat-text"></i> Has comment</small></div>`;
+              }
+              
               // Add cancel button
               const cancelBtn = document.createElement('button');
               cancelBtn.className = 'btn btn-sm btn-outline-danger mt-2';
@@ -573,6 +586,19 @@
             } else {
               slotCard.className = 'slot slot-filled';
               slotCard.textContent = slot.name;
+              
+              // Add comment as tooltip if it exists
+              if (slot.comment) {
+                slotCard.setAttribute('data-bs-toggle', 'tooltip');
+                slotCard.setAttribute('data-bs-placement', 'top');
+                slotCard.setAttribute('title', slot.comment);
+                
+                // Add a small indicator that there's a comment
+                const commentIndicator = document.createElement('div');
+                commentIndicator.className = 'mt-1 small text-muted';
+                commentIndicator.innerHTML = '<i class="bi bi-chat-text"></i> Has comment';
+                slotCard.appendChild(commentIndicator);
+              }
             }
           }
           
@@ -584,6 +610,11 @@
         monthDiv.appendChild(monthHeader);
         monthDiv.appendChild(monthBody);
         monthsContainer.appendChild(monthDiv);
+      });
+      // Initialize tooltips
+      const tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
+      tooltipTriggerList.forEach(tooltipTriggerEl => {
+        new bootstrap.Tooltip(tooltipTriggerEl);
       });
     }
 
@@ -609,21 +640,24 @@
 
     // Sign up for a slot
     confirmSignupBtn.addEventListener('click', () => {
-      if (!selectedMonth || !selectedSlot || !currentPlayer.name || !currentPlayer.email) {
-        return;
-      }
-      
-      const slotRef = database.ref(`months/${selectedMonth}/slots/${selectedSlot}`);
-      
-      slotRef.set({
-        name: currentPlayer.name,
-        email: currentPlayer.email
-      }).then(() => {
-        signupModal.hide();
-      }).catch(error => {
-        console.error('Error signing up:', error);
+        if (!selectedMonth || !selectedSlot || !currentPlayer.name || !currentPlayer.email) {
+          return;
+        }
+        
+        const commentText = document.getElementById('signup-comment').value.trim();
+        const slotRef = database.ref(`months/${selectedMonth}/slots/${selectedSlot}`);
+        
+        slotRef.set({
+          name: currentPlayer.name,
+          email: currentPlayer.email,
+          comment: commentText // Save the comment
+        }).then(() => {
+          signupModal.hide();
+          document.getElementById('signup-comment').value = ''; // Clear the comment field
+        }).catch(error => {
+          console.error('Error signing up:', error);
+        });
       });
-    });
 
     // Cancel a sign-up
     confirmCancelBtn.addEventListener('click', () => {
